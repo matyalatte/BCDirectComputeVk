@@ -18,6 +18,9 @@
 #define MAX_INT               asint(0x7FFFFFFF)
 #define MIN_INT               asint(0x80000000)
 
+#ifdef __spirv__
+[[vk::binding(3)]]
+#endif
 cbuffer cbCS : register(b0)
 {
     uint g_tex_width;
@@ -132,9 +135,82 @@ void swap(inout int3 lhs, inout int3 rhs)
     rhs = tmp;
 }
 
+int2x3 matrix_eq(int2x3 a, int2x3 b)
+{
+    int2x3 c;
+    c[0] = a[0] == b[0];
+    c[1] = a[1] == b[1];
+    return c;
+}
+
+int2x3 matrix_neq(int2x3 a, int2x3 b)
+{
+    int2x3 c;
+    c[0] = a[0] != b[0];
+    c[1] = a[1] != b[1];
+    return c;
+}
+
+int2x3 matrix_geq(int2x3 a, int2x3 b)
+{
+    int2x3 c;
+    c[0] = a[0] >= b[0];
+    c[1] = a[1] >= b[1];
+    return c;
+}
+
+int2x3 matrix_gt(int2x3 a, int2x3 b)
+{
+    int2x3 c;
+    c[0] = a[0] > b[0];
+    c[1] = a[1] > b[1];
+    return c;
+}
+
+int2x3 matrix_shiftl(int2x3 a, int2x3 b)
+{
+    int2x3 c;
+    c[0] = a[0] << b[0];
+    c[1] = a[1] << b[1];
+    return c;
+}
+
+int2x3 matrix_shiftr(int2x3 a, int2x3 b)
+{
+    int2x3 c;
+    c[0] = a[0] >> b[0];
+    c[1] = a[1] >> b[1];
+    return c;
+}
+
+int2x3 matrix_or(int2x3 a, int2x3 b)
+{
+    int2x3 c;
+    c[0] = a[0] | b[0];
+    c[1] = a[1] | b[1];
+    return c;
+}
+
+int2x3 matrix_and(int2x3 a, int2x3 b)
+{
+    int2x3 c;
+    c[0] = a[0] & b[0];
+    c[1] = a[1] & b[1];
+    return c;
+}
+
+#ifdef __spirv__
+[[vk::binding(0)]]
+#endif
 Texture2D<float4> g_Input : register(t0);
+#ifdef __spirv__
+[[vk::binding(1)]]
+#endif
 StructuredBuffer<uint4> g_InBuff : register(t1);
 
+#ifdef __spirv__
+[[vk::binding(2)]]
+#endif
 RWStructuredBuffer<uint4> g_OutBuff : register(u0);
 
 struct SharedData
@@ -1048,15 +1124,15 @@ void quantize(inout int2x3 endPoint, uint prec)
     int iprec = asint(prec);
     if (g_format == UNSIGNED_F16)
     {
-        endPoint = ((iprec >= 15) | (endPoint == 0)) ? endPoint
-            : ((endPoint == asint(0xFFFF)) ? ((1 << iprec) - 1)
-                : (((endPoint << iprec) + asint(0x0000)) >> 16));
+        endPoint = matrix_or((iprec >= 15), matrix_eq(endPoint, 0)) ? endPoint
+            : (matrix_eq(endPoint, asint(0xFFFF)) ? ((1 << iprec) - 1)
+                : matrix_shiftr((matrix_shiftl(endPoint, iprec) + asint(0x0000)), 16));
     }
     else
     {
-        endPoint = ((iprec >= 16) | (endPoint == 0)) ? endPoint
-            : ((endPoint >= 0) ? ((endPoint == asint(0x7FFF)) ? ((1 << (iprec - 1)) - 1) : (((endPoint << (iprec - 1)) + asint(0x0000)) >> 15))
-                : ((-endPoint == asint(0x7FFF)) ? -((1 << (iprec - 1)) - 1) : -(((-endPoint << (iprec - 1)) + asint(0x0000)) >> 15)));
+        endPoint = matrix_or((iprec >= 16), matrix_eq(endPoint, 0)) ? endPoint
+            : (matrix_geq(endPoint, 0) ? (matrix_eq(endPoint, asint(0x7FFF)) ? ((1 << (iprec - 1)) - 1) : matrix_shiftr((matrix_shiftl(endPoint, (iprec - 1)) + asint(0x0000)), 15))
+                : (matrix_eq(-endPoint, asint(0x7FFF)) ? -((1 << (iprec - 1)) - 1) : -matrix_shiftr((matrix_shiftl(-endPoint, (iprec - 1)) + asint(0x0000)), 15)));
     }
 }
 void finish_quantize_0(inout int bBadQuantize, inout int2x3 endPoint, uint4 prec, bool transformed)
@@ -1073,7 +1149,7 @@ void finish_quantize_0(inout int bBadQuantize, inout int2x3 endPoint, uint4 prec
     }
     else
     {
-        endPoint &= ((1 << prec.x) - 1);
+        endPoint = matrix_and(endPoint, ((1 << prec.x) - 1));
     }
 }
 void finish_quantize_1(inout int bBadQuantize, inout int2x3 endPoint, uint4 prec, bool transformed)
@@ -1094,7 +1170,7 @@ void finish_quantize_1(inout int bBadQuantize, inout int2x3 endPoint, uint4 prec
     }
     else
     {
-        endPoint &= ((1 << prec.x) - 1);
+        endPoint = matrix_and(endPoint, ((1 << prec.x) - 1));
     }
 }
 void finish_quantize(out bool bBadQuantize, inout int2x3 endPoint, uint4 prec, bool transformed)
@@ -1112,7 +1188,7 @@ void finish_quantize(out bool bBadQuantize, inout int2x3 endPoint, uint4 prec, b
     }
     else
     {
-        endPoint &= ((1 << prec.x) - 1);
+        endPoint = matrix_and(endPoint, ((1 << prec.x) - 1));
 
         bBadQuantize = 0;
     }
@@ -1166,17 +1242,17 @@ void unquantize(inout int2x3 color, uint prec)
     {
         if (prec < 15)
         {
-            color = (color != 0) ? (color == ((1 << iprec) - 1) ? 0xFFFF : (((color << 16) + 0x8000) >> iprec)) : color;
+            color = matrix_neq(color, 0) ? matrix_eq(color, ((1 << iprec) - 1) ? 0xFFFF : matrix_shiftr((matrix_shiftl(color, 16) + 0x8000), iprec)) : color;
         }
     }
     else
     {
         if (prec < 16)
         {
-            uint2x3 s = color >= 0 ? 0 : 1;
+            uint2x3 s = matrix_geq(color, 0) ? 0 : 1;
             color = abs(color);
-            color = (color != 0) ? (color >= ((1 << (iprec - 1)) - 1) ? 0x7FFF : (((color << 15) + 0x4000) >> (iprec - 1))) : color;
-            color = s > 0 ? -color : color;
+            color = matrix_neq(color, 0) ? matrix_geq(color, ((1 << (iprec - 1)) - 1) ? 0x7FFF : matrix_shiftr((matrix_shiftl(color, 15) + 0x4000), (iprec - 1))) : color;
+            color = matrix_gt(s, 0) ? -color : color;
         }
     }
 }

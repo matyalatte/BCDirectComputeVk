@@ -186,6 +186,9 @@ static const uint aStep[3][64] =
     }
 };
 
+#ifdef __spirv__
+[[vk::binding(3)]]
+#endif
 cbuffer cbCS : register(b0)
 {
     uint g_tex_width;
@@ -254,10 +257,19 @@ void Ensure_A_Is_Larger(inout uint4 a, inout uint4 b)
 }
 
 
-Texture2D g_Input : register(t0);
-StructuredBuffer<uint4> g_InBuff : register(t1);
+#ifdef __spirv__
+[[vk::binding(0)]]
+#endif
+Texture2D g_Input : register(t0, space0);
+#ifdef __spirv__
+[[vk::binding(1)]]
+#endif
+StructuredBuffer<uint4> g_InBuff : register(t1, space0);
 
-RWStructuredBuffer<uint4> g_OutBuff : register(u0);
+#ifdef __spirv__
+[[vk::binding(2)]]
+#endif
+RWStructuredBuffer<uint4> g_OutBuff : register(u0, space0);
 
 #define THREAD_GROUP_SIZE	64
 #define BLOCK_SIZE_Y		4
@@ -707,7 +719,7 @@ void TryMode137CS(uint GI : SV_GroupIndex, uint3 groupID : SV_GroupID) // mode 1
             endPoint[0] = endPointBackup[0];
             endPoint[1] = endPointBackup[1];
 
-            for (i = 0; i < 2; i++) // loop through 2 subsets
+            for (uint i = 0; i < 2; i++) // loop through 2 subsets
             {
                 if (g_mode_id == 1)
                 {
@@ -761,7 +773,7 @@ void TryMode137CS(uint GI : SV_GroupIndex, uint3 groupID : SV_GroupID) // mode 1
             }
 
             uint p_error[2] = { 0, 0 };
-            for (i = 0; i < 16; i++)
+            for (uint i = 0; i < 16; i++)
             {
                 uint subset_index = (bits >> i) & 0x01;
 
@@ -795,7 +807,7 @@ void TryMode137CS(uint GI : SV_GroupIndex, uint3 groupID : SV_GroupID) // mode 1
                     p_error[0] += pixel_error;
             }
 
-            for (i = 0; i < 2; i++)
+            for (uint i = 0; i < 2; i++)
             {
                 if (p_error[i] < error[i])
                 {
@@ -994,7 +1006,7 @@ void TryMode02CS(uint GI : SV_GroupIndex, uint3 groupID : SV_GroupID) // mode 0 
             endPoint[1] = endPointBackup[1];
             endPoint[2] = endPointBackup[2];
 
-            for (i = 0; i < 3; i++)
+            for (uint i = 0; i < 3; i++)
             {
                 if (0 == g_mode_id)
                 {
@@ -1020,7 +1032,7 @@ void TryMode02CS(uint GI : SV_GroupIndex, uint3 groupID : SV_GroupID) // mode 0 
 
             // TODO: again, this shouldn't be necessary here in error calculation
             uint ci[3] = { 0, candidateFixUpIndex1D[partition].x, candidateFixUpIndex1D[partition].y };
-            for (i = 0; i < 3; i++)
+            for (uint i = 0; i < 3; i++)
             {
                 int dotProduct = dot(span[i], shared_temp[threadBase + ci[i]].pixel - endPoint[i][0]);
                 if (span_norm_sqr[i] > 0 && dotProduct > 0 && uint(dotProduct * 63.49999) > uint(32 * span_norm_sqr[i]))
@@ -1031,7 +1043,7 @@ void TryMode02CS(uint GI : SV_GroupIndex, uint3 groupID : SV_GroupID) // mode 0 
             }
 
             uint p_error[3] = { 0, 0, 0 };
-            for (i = 0; i < 16; i++)
+            for (uint i = 0; i < 16; i++)
             {
                 uint subset_index = (bits2 >> (i * 2)) & 0x03;
                 if (subset_index == 2)
@@ -1071,7 +1083,7 @@ void TryMode02CS(uint GI : SV_GroupIndex, uint3 groupID : SV_GroupID) // mode 0 
                     p_error[0] += pixel_error;
             }
 
-            for (i = 0; i < 3; i++)
+            for (uint i = 0; i < 3; i++)
             {
                 if (p_error[i] < error[i])
                 {
@@ -1719,8 +1731,9 @@ uint2x4 compress_endpoints7(inout uint2x4 endPoint, uint2 P)
         quantized[j] |= P[j];
 
         endPoint[j] = unquantize(quantized[j], 6);
+        quantized[j] <<= 2;
     }
-    return quantized << 2;
+    return quantized;
 }
 
 #define get_end_point_l(subset) shared_temp[threadBase + subset].endPoint_low_quantized
