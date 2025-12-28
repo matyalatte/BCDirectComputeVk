@@ -1,0 +1,25 @@
+*.txt
+!CMakeLists.txt
+
+# built files and binaries
+build
+dxc
+.vscode
+*.inc
+*.spv
+*.exe
+*.dll
+
+# scripts
+*.bat
+!build.bat
+!dxc_compile.bat
+*.sh
+!build.sh
+!dxc_compile.sh
+!install_dxc.sh
+
+# textures
+*.dds
+!example/R8G8B8A8_UNORM_512x512.dds
+!example/R32G32B32A32_FLOAT_512x512.dds
