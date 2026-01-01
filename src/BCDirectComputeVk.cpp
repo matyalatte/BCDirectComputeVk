@@ -38,6 +38,7 @@ GPUCompressBCVk::GPUCompressBCVk() {
     m_queue = VK_NULL_HANDLE;
     m_cmd_pool = VK_NULL_HANDLE;
     m_memory_props = {};
+    m_is_llvmpipe = false;
 
     m_shader_bc6_enc = VK_NULL_HANDLE;
     m_shader_bc6_modeG10 = VK_NULL_HANDLE;
@@ -185,6 +186,12 @@ VkResult CreateVkPipelineLayout(VkDevice device,
     return vkCreatePipelineLayout(device, &plci, 0, pipe_layout);
 }
 
+static bool IsLLVMpipe(VkPhysicalDevice gpu) {
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(gpu, &props);
+    return strstr(props.deviceName, "llvmpipe") != nullptr;
+}
+
 VkResult GPUCompressBCVk::Initialize(
         VkDevice device,
         VkPhysicalDevice physical_device,
@@ -198,6 +205,7 @@ VkResult GPUCompressBCVk::Initialize(
 
     VkResult r = VK_SUCCESS;
     m_device = device;
+    m_is_llvmpipe = IsLLVMpipe(physical_device);
 
     vkGetPhysicalDeviceMemoryProperties(physical_device, &m_memory_props);
     vkGetDeviceQueue(m_device, family_id, 0, &m_queue);
@@ -879,6 +887,11 @@ VkResult GPUCompressBCVk::Compress(void* src_pixels, void* out_pixels) {
 
     if (!src_pixels || !out_pixels)
         return VK_ERROR_UNKNOWN;
+
+    if (m_is_llvmpipe && !m_isbc7) {
+        // BC6 encoder crashes on LLVMpipe.
+        return VK_ERROR_UNKNOWN;
+    }
 
     VkFormat src_format = SrcFormatToVkFormat(m_srcformat);
 

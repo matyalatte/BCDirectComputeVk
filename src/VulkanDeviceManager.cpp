@@ -249,6 +249,16 @@ VkResult CreateVkDevice(VkPhysicalDevice physical_device, uint32_t family_id, ui
     return vkCreateDevice(physical_device, &device_create_info, nullptr, device);
 }
 
+static bool IsLLVMpipe(VkPhysicalDevice gpu) {
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(gpu, &props);
+    return strstr(props.deviceName, "llvmpipe") != nullptr;
+}
+
+bool VulkanDeviceManager::GPUIsLLVMpipe(uint32_t id) {
+    return IsLLVMpipe(m_gpus[id]);
+}
+
 VkResult VulkanDeviceManager::CreateDevice(uint32_t gpu_id) {
     if (m_device != VK_NULL_HANDLE)
         return VK_ERROR_UNKNOWN;  // VkDevice exists already.
@@ -272,12 +282,16 @@ VkResult VulkanDeviceManager::CreateDevice(uint32_t gpu_id) {
     } else {
         for (uint32_t i = 0; i < m_gpu_count; i++) {
             gpu = m_gpus[i];
-            GetComputeQueueFamily(gpu, &m_family_id, &queue_count);
+            uint32_t family_id = -1;
+            GetComputeQueueFamily(gpu, &family_id, &queue_count);
             if (!HasSupportedGpuMemroy(gpu))
-                m_family_id = -1;
-            if (m_family_id != -1) {
+                family_id = -1;
+            if (family_id != -1) {
                 m_gpu_id = i;
-                break;
+                m_family_id = family_id;
+                if (!IsLLVMpipe(gpu))
+                    break;
+                // Find another GPU if it's LLVMpipe
             }
         }
     }

@@ -71,6 +71,7 @@ class VulkanDeviceManager {
     void GetGPUProperties(uint32_t id, VkPhysicalDeviceProperties* props) {
         vkGetPhysicalDeviceProperties(m_gpus[id], props);
     }
+    bool GPUIsLLVMpipe(uint32_t id);
 
     // Create VkDevice from a GPU.
     // When `gpu_id` is -1, it uses one of GPUs which can run compute shaders.
@@ -85,5 +86,5 @@ class VulkanDeviceManager {
     uint32_t GetUsingFamilyId() { return m_family_id; }
     uint32_t GetUsingGPUId() { return m_gpu_id; }
     VkPhysicalDevice GetUsingGPU() { return m_gpus[m_gpu_id]; }
-
+    bool UsingGPUIsLLVMpipe() { return GPUIsLLVMpipe(m_gpu_id); }
 };

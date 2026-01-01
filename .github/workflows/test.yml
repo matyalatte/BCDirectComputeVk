@@ -15,8 +15,9 @@ jobs:
       # Note: curl, tar, build-essential, and cmake are already installed
       - run: |
           sudo apt-get update
-          sudo apt-get install vulkan-tools libvulkan-dev vulkan-validationlayers
+          sudo apt-get install mesa-vulkan-drivers vulkan-tools libvulkan-dev vulkan-validationlayers
       - run: |
           ./install_dxc.sh
           ./dxc_compile.sh
-      - run: ./build.sh
+          ./build.sh
+      - run: ./example-app
