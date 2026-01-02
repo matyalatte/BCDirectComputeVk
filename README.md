@@ -29,7 +29,12 @@ runtime stack intended for full Direct3D compatibility. In contrast, DirectXTex 
 
 ## Build Instructions
 
-First, install gcc, cmake, and vulkan-sdk.
+First, download submoudles.
+```bash
+git submodule update --init
+```
+
+Next, install gcc, cmake, and vulkan-sdk.
 
 ```bash
 # Note: This only works for Ubuntu24.04.

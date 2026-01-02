@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef USE_VOLK
+#include "volk.h"
+#else
 #include <vulkan/vulkan.h>
+#endif
 
 // GPUCompressBCVk: Class to perform BC compressions via Vulkan APIs
 

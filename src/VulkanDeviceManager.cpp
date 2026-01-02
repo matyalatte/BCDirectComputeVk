@@ -30,6 +30,11 @@ VulkanDeviceManager::~VulkanDeviceManager() {
     free(m_gpus);
     m_gpus = nullptr;
     m_gpu_count = 0;
+
+#ifdef USE_VOLK
+    // Unload vulkan library
+    volkFinalize();
+#endif
 }
 
 VkResult CreateVkInstance(VkInstance* instance, bool enable_debug = true) {
@@ -135,6 +140,13 @@ VkResult VulkanDeviceManager::CreateInstance(bool enable_debug) {
     m_gpu_count = 0;
     VkResult r = VK_SUCCESS;
 
+#ifdef USE_VOLK
+    // Load vulkan library
+    r = volkInitialize();
+    if (r != VK_SUCCESS)
+        return r;
+#endif
+
     m_enable_debug = enable_debug;
     if (m_enable_debug && !HasValidationLayerSupport()) {
         m_enable_debug = false;
@@ -145,6 +157,9 @@ VkResult VulkanDeviceManager::CreateInstance(bool enable_debug) {
     r = CreateVkInstance(&m_instance, m_enable_debug);
     if (r != VK_SUCCESS)
         return r;
+#if USE_VOLK
+    volkLoadInstance(m_instance);
+#endif
 
     if (m_enable_debug) {
         r = CreateDebugUtilsMessengerEXT(m_instance, &m_dbg);
@@ -299,5 +314,9 @@ VkResult VulkanDeviceManager::CreateDevice(uint32_t gpu_id) {
         return VK_ERROR_UNKNOWN;  // Supported device not found
 
     r = CreateVkDevice(gpu, m_family_id, queue_count, &m_device);
+    #if USE_VOLK
+        if (r == VK_SUCCESS)
+            volkLoadDevice(m_device);
+    #endif
     return r;
 }

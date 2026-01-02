@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef USE_VOLK
+#include "volk.h"
+#else
 #include <vulkan/vulkan.h>
+#endif
 
 // VulkanDeviceManager: Class to create VkInstance and VkDevice
 

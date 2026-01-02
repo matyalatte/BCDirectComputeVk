@@ -17,6 +17,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install mesa-vulkan-drivers vulkan-tools libvulkan-dev vulkan-validationlayers
       - run: |
+          git submodule update --init
           ./install_dxc.sh
           ./dxc_compile.sh
           ./build.sh
