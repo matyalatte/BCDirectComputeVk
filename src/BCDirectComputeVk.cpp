@@ -455,12 +455,14 @@ VkResult GPUCompressBCVk::Prepare(uint32_t width, uint32_t height, uint32_t flag
     const size_t xblocks = std::max<size_t>(1, (width + 3) >> 2);
     const size_t yblocks = std::max<size_t>(1, (height + 3) >> 2);
     const size_t num_blocks = xblocks * yblocks;
-    VkDeviceSize buf_size = VkDeviceSize(num_blocks) * sizeof(BufferBC6HBC7);
-    m_out_buf_size = (uint32_t)buf_size;
+    m_out_buf_size = (uint32_t)num_blocks * sizeof(BufferBC6HBC7);
+    // Note: num_blocks should be a multiple of 4 in shaders. So we add paddings here.
+    VkDeviceSize buf_size = VkDeviceSize((num_blocks + 3) / 4 * 4) * sizeof(BufferBC6HBC7);
     VkBufferUsageFlags buf_usage =
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
         VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
     r = CreateVkBuffer(m_device,
                     &m_err1_buf,
                     buf_size,
