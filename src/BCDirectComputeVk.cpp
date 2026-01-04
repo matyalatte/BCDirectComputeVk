@@ -132,8 +132,9 @@ GPUCompressBCVk::~GPUCompressBCVk() {
     }
 }
 
-VkResult CreateVkShaderModule(VkDevice device, VkShaderModule* module,
-                                const unsigned char* code, uint32_t code_size) {
+static VkResult CreateVkShaderModule(
+        VkDevice device, VkShaderModule* module,
+        const unsigned char* code, uint32_t code_size) {
     VkShaderModuleCreateInfo ci = {};
     ci.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     ci.pNext = 0;
@@ -145,10 +146,11 @@ VkResult CreateVkShaderModule(VkDevice device, VkShaderModule* module,
     return vkCreateShaderModule(device, &ci, 0, module);
 }
 
-VkResult CreateVkDescriptorPool(VkDevice device,
-                                VkDescriptorPool* descriptor_pool, VkDescriptorSet* descriptor_set,
-                                VkDescriptorSetLayout dsl,
-                                VkDescriptorPoolSize* pool_sizes, uint32_t pool_size_count) {
+static VkResult CreateVkDescriptorPool(
+        VkDevice device,
+        VkDescriptorPool* descriptor_pool, VkDescriptorSet* descriptor_set,
+        VkDescriptorSetLayout dsl,
+        VkDescriptorPoolSize* pool_sizes, uint32_t pool_size_count) {
     VkDescriptorPoolCreateInfo dpci = {};
     dpci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     dpci.pNext = 0;
@@ -172,9 +174,10 @@ VkResult CreateVkDescriptorPool(VkDevice device,
     return vkAllocateDescriptorSets(device, &dsai, descriptor_set);
 }
 
-VkResult CreateVkPipelineLayout(VkDevice device,
-                                VkPipelineLayout* pipe_layout,
-                                VkDescriptorSetLayout desc_set_layout) {
+static VkResult CreateVkPipelineLayout(
+        VkDevice device,
+        VkPipelineLayout* pipe_layout,
+        VkDescriptorSetLayout desc_set_layout) {
     VkPipelineLayoutCreateInfo plci = {};
     plci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     plci.pNext = 0;
@@ -290,7 +293,7 @@ VkResult GPUCompressBCVk::Initialize(
     return r;
 }
 
-DXGI_FORMAT BcFormatToSrcFormat(DXGI_FORMAT format) {
+static DXGI_FORMAT BcFormatToSrcFormat(DXGI_FORMAT format) {
     switch (format)
     {
         // BC6H GPU compressor takes RGBAF32 as input
@@ -313,7 +316,7 @@ DXGI_FORMAT BcFormatToSrcFormat(DXGI_FORMAT format) {
     return DXGI_FORMAT_UNKNOWN;
 }
 
-bool IsBC7(DXGI_FORMAT format) {
+static bool IsBC7(DXGI_FORMAT format) {
     switch (format)
     {
     case DXGI_FORMAT_BC7_TYPELESS:
@@ -340,11 +343,12 @@ inline uint32_t FindMemoryType(
     return type_id;
 }
 
-VkResult CreateVkBuffer(VkDevice device,
-                        VkBuffer* buf, VkDeviceSize buf_size, VkBufferUsageFlags buf_usage,
-                        VkDeviceMemory* mem,
-                        VkPhysicalDeviceMemoryProperties* mem_props,
-                        VkMemoryPropertyFlags mem_flags) {
+static VkResult CreateVkBuffer(
+        VkDevice device,
+        VkBuffer* buf, VkDeviceSize buf_size, VkBufferUsageFlags buf_usage,
+        VkDeviceMemory* mem,
+        VkPhysicalDeviceMemoryProperties* mem_props,
+        VkMemoryPropertyFlags mem_flags) {
     VkBufferCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     info.size  = buf_size;
@@ -583,10 +587,11 @@ void GPUCompressBCVk::SetErrorAndOutputBuffer(VkBuffer err_buf, VkBuffer out_buf
     vkUpdateDescriptorSets(m_device, 2, writes, 0, 0);
 }
 
-void ChangeImageLayout(VkCommandBuffer command_buffer, VkImage image,
-                        VkImageLayout old_layout, VkImageLayout new_layout,
-                        VkAccessFlagBits dst_access_mask,
-                        VkPipelineStageFlags dst_stage_mask) {
+static void ChangeImageLayout(
+        VkCommandBuffer command_buffer, VkImage image,
+        VkImageLayout old_layout, VkImageLayout new_layout,
+        VkAccessFlagBits dst_access_mask,
+        VkPipelineStageFlags dst_stage_mask) {
     VkImageMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout = old_layout;
@@ -615,7 +620,7 @@ void ChangeImageLayout(VkCommandBuffer command_buffer, VkImage image,
     );
 }
 
-VkResult RunCommand(VkQueue queue, VkCommandBuffer command_buffer) {
+static VkResult RunCommand(VkQueue queue, VkCommandBuffer command_buffer) {
     VkSubmitInfo si = {};
     si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     si.pNext = 0;
@@ -752,16 +757,17 @@ VkResult GPUCompressBCVk::CopyFromOutBuffer(VkCommandBuffer command_buffer, void
     return r;
 }
 
-VkFormat SrcFormatToVkFormat(DXGI_FORMAT format) {
+static VkFormat SrcFormatToVkFormat(DXGI_FORMAT format) {
     if (format == DXGI_FORMAT_R32G32B32A32_FLOAT)
         return VK_FORMAT_R32G32B32A32_SFLOAT;
     return VK_FORMAT_R8G8B8A8_UNORM;
 }
 
-VkResult RunComputeShader(VkCommandBuffer command_buffer, VkQueue queue,
-                        VkPipeline pipeline, VkPipelineLayout pipeline_layout,
-                        VkDescriptorSet descriptor_set,
-                        uint32_t dispatch_x) {
+static VkResult RunComputeShader(
+        VkCommandBuffer command_buffer, VkQueue queue,
+        VkPipeline pipeline, VkPipelineLayout pipeline_layout,
+        VkDescriptorSet descriptor_set,
+        uint32_t dispatch_x) {
     VkResult r = VK_SUCCESS;
     VkCommandBufferBeginInfo cbi = {};
     cbi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -786,10 +792,11 @@ VkResult RunComputeShader(VkCommandBuffer command_buffer, VkQueue queue,
     return r;
 }
 
-VkResult CreateVkPipeline(VkDevice device, VkPipeline* pipeline,
-                            VkShaderModule shader_module,
-                            const char* entry_point,
-                            VkPipelineLayout pipeline_layout) {
+static VkResult CreateVkPipeline(
+        VkDevice device, VkPipeline* pipeline,
+        VkShaderModule shader_module,
+        const char* entry_point,
+        VkPipelineLayout pipeline_layout) {
     VkPipelineShaderStageCreateInfo ssi = {};
     ssi.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     ssi.pNext = 0;
@@ -811,11 +818,12 @@ VkResult CreateVkPipeline(VkDevice device, VkPipeline* pipeline,
     return vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &cpci, 0, pipeline);
 }
 
-VkResult CreateVkImage(VkDevice device, VkImage* image,
-                        uint32_t width, uint32_t height, VkFormat format,
-                        VkDeviceMemory* mem,
-                        VkPhysicalDeviceMemoryProperties* mem_props,
-                        VkMemoryPropertyFlags mem_flags) {
+static VkResult CreateVkImage(
+        VkDevice device, VkImage* image,
+        uint32_t width, uint32_t height, VkFormat format,
+        VkDeviceMemory* mem,
+        VkPhysicalDeviceMemoryProperties* mem_props,
+        VkMemoryPropertyFlags mem_flags) {
 
     VkImageCreateInfo img_info = {};
     img_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -848,8 +856,9 @@ VkResult CreateVkImage(VkDevice device, VkImage* image,
     return vkBindImageMemory(device, *image, *mem, 0);
 }
 
-VkResult CreateVkImageView(VkDevice device, VkImageView* image_view,
-                            VkImage image, VkFormat format) {
+static VkResult CreateVkImageView(
+        VkDevice device, VkImageView* image_view,
+        VkImage image, VkFormat format) {
     VkImageViewCreateInfo ivci = {};
     ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     ivci.pNext = 0;
@@ -870,8 +879,9 @@ VkResult CreateVkImageView(VkDevice device, VkImageView* image_view,
     return vkCreateImageView(device, &ivci, 0, image_view);
 }
 
-VkResult AllocateVkCommandBuffer(VkDevice device, VkCommandBuffer* command_buffer,
-                                    VkCommandPool command_pool) {
+static VkResult AllocateVkCommandBuffer(
+        VkDevice device, VkCommandBuffer* command_buffer,
+        VkCommandPool command_pool) {
     VkCommandBufferAllocateInfo cbai = {};
     cbai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cbai.pNext = 0;

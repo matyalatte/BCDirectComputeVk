@@ -25,8 +25,10 @@ inline bool MaskEq(const uint32_t* mask1, const uint32_t* mask2) {
         mask1[3] == mask2[3]);
 }
 
-int LoadDDS(const char* filename, std::vector<uint8_t>* buf,
-            uint32_t* width, uint32_t* height, DXGI_FORMAT* src_format) {
+static int LoadDDS(
+        const char* filename,
+        std::vector<uint8_t>* buf,
+        uint32_t* width, uint32_t* height, DXGI_FORMAT* src_format) {
     std::ifstream ifs(filename, std::ios::binary);
     if (!ifs) {
         std::cerr << "failed to open " << filename << "\n";
@@ -98,7 +100,10 @@ int LoadDDS(const char* filename, std::vector<uint8_t>* buf,
     return 0;
 }
 
-int SaveDDS(const char* filename, uint32_t width, uint32_t height, DXGI_FORMAT format, void* buf, uint32_t buf_size) {
+static int SaveDDS(
+        const char* filename,
+        uint32_t width, uint32_t height, DXGI_FORMAT format,
+        void* buf, uint32_t buf_size) {
     DirectX::DDS_HEADER dds_header = {};
     dds_header.size = sizeof(DirectX::DDS_HEADER);
     dds_header.flags = DDS_HEADER_FLAGS_TEXTURE | DDS_HEADER_FLAGS_LINEARSIZE;
@@ -132,7 +137,7 @@ int SaveDDS(const char* filename, uint32_t width, uint32_t height, DXGI_FORMAT f
     return 0;
 }
 
-int TryCompression(
+static int TryCompression(
         GPUCompressBCVk* compressor,
         const char* src_file, const char* out_file) {
     std::cout << "\"" << src_file << "\" -> \"" << out_file << "\"\n";
@@ -174,7 +179,7 @@ int TryCompression(
     return res;
 }
 
-void PrintUsage() {
+static void PrintUsage() {
     static const char* const usage =
         "Usage: example-app [<options>]\n"
         "\n"

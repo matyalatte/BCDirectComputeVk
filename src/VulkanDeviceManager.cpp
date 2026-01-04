@@ -37,7 +37,7 @@ VulkanDeviceManager::~VulkanDeviceManager() {
 #endif
 }
 
-VkResult CreateVkInstance(VkInstance* instance, bool enable_debug = true) {
+static VkResult CreateVkInstance(VkInstance* instance, bool enable_debug = true) {
     VkApplicationInfo app_info = {};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pApplicationName = nullptr;
@@ -92,7 +92,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     return VK_FALSE; // do not abort Vulkan calls
 }
 
-VkResult CreateDebugUtilsMessengerEXT(
+static VkResult CreateDebugUtilsMessengerEXT(
         VkInstance instance,
         VkDebugUtilsMessengerEXT* messenger) {
     PFN_vkCreateDebugUtilsMessengerEXT func =
@@ -116,7 +116,7 @@ VkResult CreateDebugUtilsMessengerEXT(
     return func(instance, &debug_create_info, nullptr, messenger);
 }
 
-bool HasValidationLayerSupport() {
+static bool HasValidationLayerSupport() {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
     VkLayerProperties* layer_props = (VkLayerProperties*)calloc(layer_count, sizeof(VkLayerProperties));
@@ -189,7 +189,7 @@ VkResult VulkanDeviceManager::CreateInstance(bool enable_debug) {
     return r;
 }
 
-void GetComputeQueueFamily(VkPhysicalDevice device, uint32_t *family_id, uint32_t *queue_count) {
+static void GetComputeQueueFamily(VkPhysicalDevice device, uint32_t *family_id, uint32_t *queue_count) {
     *family_id = -1;
     *queue_count = 0;
 
@@ -230,7 +230,7 @@ inline uint32_t FindMemoryType(
     return type_id;
 }
 
-int HasSupportedGpuMemroy(VkPhysicalDevice device) {
+static int HasSupportedGpuMemroy(VkPhysicalDevice device) {
     VkPhysicalDeviceMemoryProperties mem_props;
     vkGetPhysicalDeviceMemoryProperties(device, &mem_props);
     uint32_t visible_id =
@@ -240,8 +240,10 @@ int HasSupportedGpuMemroy(VkPhysicalDevice device) {
     return (visible_id != -1) && (invisible_id != -1);
 }
 
-VkResult CreateVkDevice(VkPhysicalDevice physical_device, uint32_t family_id, uint32_t queue_count,
-                        VkDevice* device) {
+static VkResult CreateVkDevice(
+        VkPhysicalDevice physical_device,
+        uint32_t family_id, uint32_t queue_count,
+        VkDevice* device) {
     VkDeviceQueueCreateInfo device_queue_create_info = {};
     device_queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     device_queue_create_info.queueFamilyIndex = family_id;
