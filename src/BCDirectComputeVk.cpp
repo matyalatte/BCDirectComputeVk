@@ -1000,7 +1000,11 @@ VkResult GPUCompressBCVk::Compress(void* src_pixels, void* out_pixels) {
         src_image_cpu, src_image_cpu_memory, src_image,
         src_pixels, (uint32_t)m_src_buf_size);
 
+    // Set bindings
     SetImageViewAndConstBuf(src_image_view, m_const_buf);
+    // Note: llvmpipe requires all bindings to be non-null even when shaders do not use them.
+    //       So, we use m_err1_buf as a dummy ref here.
+    SetErrorAndOutputBuffer(m_err1_buf, m_err1_buf);
 
     while (num_blocks > 0) {
         const uint32_t n = std::min<uint32_t>(num_blocks, MAX_BLOCK_BATCH);
