@@ -56,9 +56,7 @@ GPUCompressBCVk::GPUCompressBCVk() {
     m_const_buf = VK_NULL_HANDLE;
     m_const_mem = VK_NULL_HANDLE;
     m_err1_buf = VK_NULL_HANDLE;
-    m_err1_mem = VK_NULL_HANDLE;
     m_err2_buf = VK_NULL_HANDLE;
-    m_err2_mem = VK_NULL_HANDLE;
     m_out_buf = VK_NULL_HANDLE;
     m_out_mem = VK_NULL_HANDLE;
     m_outcpu_buf = VK_NULL_HANDLE;
@@ -76,21 +74,17 @@ void GPUCompressBCVk::FreeBuffers() {
         return;
     vkFreeMemory(m_device, m_const_mem, 0);
     vkDestroyBuffer(m_device, m_const_buf, 0);
-    vkFreeMemory(m_device, m_err1_mem, 0);
-    vkDestroyBuffer(m_device, m_err1_buf, 0);
-    vkFreeMemory(m_device, m_err2_mem, 0);
-    vkDestroyBuffer(m_device, m_err2_buf, 0);
     vkFreeMemory(m_device, m_out_mem, 0);
+    vkDestroyBuffer(m_device, m_err1_buf, 0);
+    vkDestroyBuffer(m_device, m_err2_buf, 0);
     vkDestroyBuffer(m_device, m_out_buf, 0);
     vkFreeMemory(m_device, m_outcpu_mem, 0);
     vkDestroyBuffer(m_device, m_outcpu_buf, 0);
     m_const_mem = VK_NULL_HANDLE;
     m_const_buf = VK_NULL_HANDLE;
-    m_err1_mem = VK_NULL_HANDLE;
-    m_err1_buf = VK_NULL_HANDLE;
-    m_err2_mem = VK_NULL_HANDLE;
-    m_err2_buf = VK_NULL_HANDLE;
     m_out_mem = VK_NULL_HANDLE;
+    m_err1_buf = VK_NULL_HANDLE;
+    m_err2_buf = VK_NULL_HANDLE;
     m_out_buf = VK_NULL_HANDLE;
     m_outcpu_mem = VK_NULL_HANDLE;
     m_outcpu_buf = VK_NULL_HANDLE;
@@ -344,30 +338,45 @@ inline uint32_t FindMemoryType(
 }
 
 static VkResult CreateVkBuffer(
-        VkDevice device,
-        VkBuffer* buf, VkDeviceSize buf_size, VkBufferUsageFlags buf_usage,
-        VkDeviceMemory* mem,
-        VkPhysicalDeviceMemoryProperties* mem_props,
-        VkMemoryPropertyFlags mem_flags) {
+        VkDevice device, VkBuffer* buf,
+        VkDeviceSize buf_size, VkBufferUsageFlags buf_usage) {
     VkBufferCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     info.size  = buf_size;
     info.usage = buf_usage;
     info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    return vkCreateBuffer(device, &info, 0, buf);
+}
 
-    VkResult r = vkCreateBuffer(device, &info, 0, buf);
+static VkResult AllocateVkMemroy(
+        VkDevice device,
+        VkDeviceMemory* mem,
+        VkPhysicalDeviceMemoryProperties* mem_props,
+        VkDeviceSize alloc_size,
+        uint32_t memory_type_bits,
+        VkMemoryPropertyFlags mem_flags) {
+    VkMemoryAllocateInfo alloc = {};
+    alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc.allocationSize = alloc_size;
+    alloc.memoryTypeIndex = FindMemoryType(mem_props, memory_type_bits, mem_flags);
+
+    return vkAllocateMemory(device, &alloc, nullptr, mem);
+}
+
+static VkResult CreateVkBufferAndMemory(
+        VkDevice device,
+        VkBuffer* buf, VkDeviceSize buf_size, VkBufferUsageFlags buf_usage,
+        VkDeviceMemory* mem,
+        VkPhysicalDeviceMemoryProperties* mem_props,
+        VkMemoryPropertyFlags mem_flags) {
+    VkResult r = CreateVkBuffer(device, buf, buf_size, buf_usage);
     if (r != VK_SUCCESS)
         return r;
 
     VkMemoryRequirements req;
     vkGetBufferMemoryRequirements(device, *buf, &req);
 
-    VkMemoryAllocateInfo alloc = {};
-    alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc.allocationSize = req.size;
-    alloc.memoryTypeIndex = FindMemoryType(mem_props, req.memoryTypeBits, mem_flags);
-
-    r = vkAllocateMemory(device, &alloc, nullptr, mem);
+    r = AllocateVkMemroy(device, mem, mem_props, req.size, req.memoryTypeBits, mem_flags);
     if (r != VK_SUCCESS)
         return r;
 
@@ -441,7 +450,7 @@ VkResult GPUCompressBCVk::Prepare(uint32_t width, uint32_t height, uint32_t flag
     m_src_buf_size = m_width * m_height * (m_isbc7 ? 4 : 16);
 
     // Constants
-    r = CreateVkBuffer(m_device,
+    r = CreateVkBufferAndMemory(m_device,
                     &m_const_buf,
                     sizeof(ConstantsBC6HBC7),
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -463,36 +472,37 @@ VkResult GPUCompressBCVk::Prepare(uint32_t width, uint32_t height, uint32_t flag
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
         VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-    r = CreateVkBuffer(m_device,
-                    &m_err1_buf,
-                    buf_size,
-                    buf_usage,
-                    &m_err1_mem,
-                    &m_memory_props,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    r = CreateVkBuffer(m_device, &m_err1_buf, buf_size, buf_usage);
     if (r != VK_SUCCESS)
         return r;
-    r = CreateVkBuffer(m_device,
-                    &m_err2_buf,
-                    buf_size,
-                    buf_usage,
-                    &m_err2_mem,
-                    &m_memory_props,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    r = CreateVkBuffer(m_device, &m_err2_buf, buf_size, buf_usage);
     if (r != VK_SUCCESS)
         return r;
-    r = CreateVkBuffer(m_device,
-                    &m_out_buf,
-                    buf_size,
-                    buf_usage,
-                    &m_out_mem,
-                    &m_memory_props,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    r = CreateVkBuffer(m_device, &m_out_buf, buf_size, buf_usage);
+    if (r != VK_SUCCESS)
+        return r;
+
+    VkMemoryRequirements req;
+    vkGetBufferMemoryRequirements(m_device, m_err1_buf, &req);
+
+    r = AllocateVkMemroy(
+            m_device, &m_out_mem, &m_memory_props,
+            req.size * 3, req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (r != VK_SUCCESS)
+        return r;
+
+    r = vkBindBufferMemory(m_device, m_err1_buf, m_out_mem, 0);
+    if (r != VK_SUCCESS)
+        return r;
+    r = vkBindBufferMemory(m_device, m_err2_buf, m_out_mem, req.size);
+    if (r != VK_SUCCESS)
+        return r;
+    r = vkBindBufferMemory(m_device, m_out_buf, m_out_mem, req.size * 2);
     if (r != VK_SUCCESS)
         return r;
 
     // Output for CPU
-    r = CreateVkBuffer(m_device,
+    r = CreateVkBufferAndMemory(m_device,
                     &m_outcpu_buf,
                     buf_size,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -846,12 +856,7 @@ static VkResult CreateVkImage(
     VkMemoryRequirements req;
     vkGetImageMemoryRequirements(device, *image, &req);
 
-    VkMemoryAllocateInfo alloc = {};
-    alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc.allocationSize = req.size;
-    alloc.memoryTypeIndex = FindMemoryType(mem_props, req.memoryTypeBits, mem_flags);
-
-    r = vkAllocateMemory(device, &alloc, nullptr, mem);
+    r = AllocateVkMemroy(device, mem, mem_props, req.size, req.memoryTypeBits, mem_flags);
     if (r != VK_SUCCESS)
         return r;
 
@@ -963,7 +968,7 @@ VkResult GPUCompressBCVk::Compress(void* src_pixels, void* out_pixels) {
             goto COMPUTE_END;
     }
 
-    r = CreateVkBuffer(m_device,
+    r = CreateVkBufferAndMemory(m_device,
                     &src_image_cpu,
                     m_src_buf_size,
                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |

@@ -108,9 +108,7 @@ class GPUCompressBCVk {
     VkBuffer m_const_buf;
     VkDeviceMemory m_const_mem;
     VkBuffer m_err1_buf;
-    VkDeviceMemory m_err1_mem;
     VkBuffer m_err2_buf;
-    VkDeviceMemory m_err2_mem;
     VkBuffer m_out_buf;
     VkDeviceMemory m_out_mem;
     VkBuffer m_outcpu_buf;
