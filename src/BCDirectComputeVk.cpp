@@ -72,14 +72,14 @@ GPUCompressBCVk::GPUCompressBCVk() {
 void GPUCompressBCVk::FreeBuffers() {
     if (m_device == VK_NULL_HANDLE)
         return;
-    vkFreeMemory(m_device, m_const_mem, 0);
     vkDestroyBuffer(m_device, m_const_buf, 0);
-    vkFreeMemory(m_device, m_out_mem, 0);
+    vkFreeMemory(m_device, m_const_mem, 0);
     vkDestroyBuffer(m_device, m_err1_buf, 0);
     vkDestroyBuffer(m_device, m_err2_buf, 0);
     vkDestroyBuffer(m_device, m_out_buf, 0);
-    vkFreeMemory(m_device, m_outcpu_mem, 0);
+    vkFreeMemory(m_device, m_out_mem, 0);
     vkDestroyBuffer(m_device, m_outcpu_buf, 0);
+    vkFreeMemory(m_device, m_outcpu_mem, 0);
     m_const_mem = VK_NULL_HANDLE;
     m_const_buf = VK_NULL_HANDLE;
     m_out_mem = VK_NULL_HANDLE;
@@ -1105,11 +1105,11 @@ VkResult GPUCompressBCVk::Compress(void* src_pixels, void* out_pixels) {
     r = CopyFromOutBuffer(command_buffer, out_pixels);
 
     COMPUTE_END:
-    vkFreeMemory(m_device, src_image_cpu_memory, 0);
     vkDestroyBuffer(m_device, src_image_cpu, 0);
+    vkFreeMemory(m_device, src_image_cpu_memory, 0);
     vkDestroyImageView(m_device, src_image_view, 0);
-    vkFreeMemory(m_device, src_image_memory, 0);
     vkDestroyImage(m_device, src_image, 0);
+    vkFreeMemory(m_device, src_image_memory, 0);
     vkDestroyPipeline(m_device, pipeline_mode456_G10, 0);
     vkDestroyPipeline(m_device, pipeline_mode137_LE10, 0);
     vkDestroyPipeline(m_device, pipeline_mode02, 0);
