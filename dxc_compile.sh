@@ -23,6 +23,8 @@ compile_shader() {
         -fvk-use-dx-layout \
         -T cs_6_0 \
         -fspv-target-env=vulkan1.0 \
+        -fvk-u-shift 2 0 \
+        -fvk-b-shift 3 0 \
         -E "$entry" \
         -Fh "${base}_${entry}.inc" \
         -Vn "${base}_${entry}" \
@@ -34,6 +36,8 @@ compile_shader() {
         -fvk-use-dx-layout \
         -T cs_6_0 \
         -fspv-target-env=vulkan1.0 \
+        -fvk-u-shift 2 0 \
+        -fvk-b-shift 3 0 \
         -E "$entry" \
         -Fo "${base}_${entry}.spv" \
         "${base}.hlsl"

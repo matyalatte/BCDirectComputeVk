@@ -186,9 +186,6 @@ static const uint aStep[3][64] =
     }
 };
 
-#ifdef __spirv__
-[[vk::binding(3)]]
-#endif
 cbuffer cbCS : register(b0)
 {
     uint g_tex_width;
@@ -257,18 +254,9 @@ void Ensure_A_Is_Larger(inout uint4 a, inout uint4 b)
 }
 
 
-#ifdef __spirv__
-[[vk::binding(0)]]
-#endif
 Texture2D g_Input : register(t0, space0);
-#ifdef __spirv__
-[[vk::binding(1)]]
-#endif
 StructuredBuffer<uint4> g_InBuff : register(t1, space0);
 
-#ifdef __spirv__
-[[vk::binding(2)]]
-#endif
 RWStructuredBuffer<uint4> g_OutBuff : register(u0, space0);
 
 #define THREAD_GROUP_SIZE	64

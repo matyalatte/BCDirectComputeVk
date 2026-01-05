@@ -18,9 +18,6 @@
 #define MAX_INT               asint(0x7FFFFFFF)
 #define MIN_INT               asint(0x80000000)
 
-#ifdef __spirv__
-[[vk::binding(3)]]
-#endif
 cbuffer cbCS : register(b0)
 {
     uint g_tex_width;
@@ -199,18 +196,9 @@ int2x3 matrix_and(int2x3 a, int2x3 b)
     return c;
 }
 
-#ifdef __spirv__
-[[vk::binding(0)]]
-#endif
 Texture2D<float4> g_Input : register(t0);
-#ifdef __spirv__
-[[vk::binding(1)]]
-#endif
 StructuredBuffer<uint4> g_InBuff : register(t1);
 
-#ifdef __spirv__
-[[vk::binding(2)]]
-#endif
 RWStructuredBuffer<uint4> g_OutBuff : register(u0);
 
 struct SharedData
