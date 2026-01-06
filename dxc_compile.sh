@@ -15,31 +15,35 @@ compile_shader() {
     local base="$1"
     local entry="$2"
 
-    echo Generating ${base}_${entry}.inc...
+    local opt=(
+        "-spirv"
+        "-HV" "2018"
+        "-fvk-use-dx-layout"
+        "-T" "cs_6_0"
+        "-no-warnings"
+        "-fspv-target-env=vulkan1.0"
+        "-fvk-u-shift" "2" "0"
+        "-fvk-b-shift" "3" "0"
+        "-E" "$entry"
+    )
+    local filename="${base}_${entry}"
+
+    if [ "$3" = "use_llvmpipe" ]; then
+        opt+=("-D" "USE_LLVMPIPE")
+        filename="${base}_${entry}_llvmpipe"
+    fi
+
+    echo Generating ${filename}.inc...
 
     dxc \
-        -spirv \
-        -HV 2018 \
-        -fvk-use-dx-layout \
-        -T cs_6_0 \
-        -fspv-target-env=vulkan1.0 \
-        -fvk-u-shift 2 0 \
-        -fvk-b-shift 3 0 \
-        -E "$entry" \
-        -Fh "${base}_${entry}.inc" \
-        -Vn "${base}_${entry}" \
+        "${opt[@]}" \
+        -Fh "${filename}.inc" \
+        -Vn "${filename}" \
         "${base}.hlsl"
 
     dxc \
-        -spirv \
-        -HV 2018 \
-        -fvk-use-dx-layout \
-        -T cs_6_0 \
-        -fspv-target-env=vulkan1.0 \
-        -fvk-u-shift 2 0 \
-        -fvk-b-shift 3 0 \
-        -E "$entry" \
-        -Fo "${base}_${entry}.spv" \
+        "${opt[@]}" \
+        -Fo "${filename}.spv" \
         "${base}.hlsl"
 }
 
@@ -53,5 +57,9 @@ compile_shader BC7Encode EncodeBlockCS
 compile_shader BC6HEncode TryModeG10CS
 compile_shader BC6HEncode TryModeLE10CS
 compile_shader BC6HEncode EncodeBlockCS
+
+# Note: LLVMpipe requires a custom build which does not use f16tof32(), or it crashes on LLVM.
+compile_shader BC6HEncode TryModeG10CS use_llvmpipe
+compile_shader BC6HEncode TryModeLE10CS use_llvmpipe
 
 popd

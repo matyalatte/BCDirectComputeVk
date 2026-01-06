@@ -1306,13 +1306,52 @@ float half2float1(uint Value)
 }
 #endif
 
+#ifdef USE_LLVMPIPE
+// Note: UnpackHalf2x16 seems to be broken on llvmpipe.
+//       So, we should not use the builtin f16tof32() on llvmpipe.
+float f16tof32_llvmpipe(uint h)
+{
+    int s = (h >> 15) & 1;
+    int e = (h >> 10) & 0x1F;
+    int m = h & 0x3FF;
+
+    float sign = s != 0 ? -1.0f : 1.0f;
+
+    if (e == 0)
+    {
+        // zero or subnormal
+        if (m == 0)
+            return sign * 0.0f;
+
+        return sign * ldexp((float)m, -24);
+    }
+
+    if (e == 31)
+    {
+        // inf or NaN
+        uint bits = (m == 0)
+            ? ((s << 31) | (0xFF << 23))          // ±inf
+            : ((s << 31) | (0xFF << 23) | 0x1);   // NaN
+
+        return asfloat(bits);
+    }
+
+    // normal
+    return sign * ldexp((float)(m | 0x400), e - 25);
+}
+#endif
+
 float3 half2float(uint3 color_h)
 {
+#ifdef USE_LLVMPIPE
+    return float3(f16tof32_llvmpipe(color_h.x), f16tof32_llvmpipe(color_h.y), f16tof32_llvmpipe(color_h.z));
+#else  // USE_LLVMPIPE
 #ifdef EMULATE_F16C
     return float3(half2float1(color_h.x), half2float1(color_h.y), half2float1(color_h.z));
 #else
     return float3(f16tof32(color_h.x), f16tof32(color_h.y), f16tof32(color_h.z));
 #endif
+#endif  // USE_LLVMPIPE
 }
 
 void block_package(inout uint4 block, int2x3 endPoint[2], uint mode_type, uint partition_index) // for mode 1 - 10

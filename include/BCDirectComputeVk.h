@@ -86,7 +86,6 @@ class GPUCompressBCVk {
     VkQueue m_queue;
     VkCommandPool m_cmd_pool;
     VkPhysicalDeviceMemoryProperties m_memory_props;
-    bool m_is_llvmpipe;
 
     // shaders
     VkShaderModule m_shader_bc6_enc;

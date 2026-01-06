@@ -275,15 +275,11 @@ int main(int argc, char** argv) {
         "BC7_result.dds");
     if (res != 0) return res;
 
-    if (manager.UsingGPUIsLLVMpipe()) {
-        std::cout << "Skipped BC6 encoder because it crashes on LLVMpipe.\n";
-    } else {
-        res = TryCompression(
-            &compressor,
-            "example/R32G32B32A32_FLOAT_512x512.dds",
-            "BC6_result.dds");
-        if (res != 0) return res;
-    }
+    res = TryCompression(
+        &compressor,
+        "example/R32G32B32A32_FLOAT_512x512.dds",
+        "BC6_result.dds");
+    if (res != 0) return res;
 
     std::cout << "success\n";
     return 0;

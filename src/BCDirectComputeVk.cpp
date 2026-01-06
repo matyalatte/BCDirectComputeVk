@@ -11,6 +11,11 @@
 #include "BC6HEncode_TryModeG10CS.inc"
 #include "BC6HEncode_TryModeLE10CS.inc"
 
+#ifndef _WIN32
+#include "BC6HEncode_TryModeG10CS_llvmpipe.inc"
+#include "BC6HEncode_TryModeLE10CS_llvmpipe.inc"
+#endif
+
 #include "BC7Encode_EncodeBlockCS.inc"
 #include "BC7Encode_TryMode02CS.inc"
 #include "BC7Encode_TryMode137CS.inc"
@@ -38,7 +43,6 @@ GPUCompressBCVk::GPUCompressBCVk() {
     m_queue = VK_NULL_HANDLE;
     m_cmd_pool = VK_NULL_HANDLE;
     m_memory_props = {};
-    m_is_llvmpipe = false;
 
     m_shader_bc6_enc = VK_NULL_HANDLE;
     m_shader_bc6_modeG10 = VK_NULL_HANDLE;
@@ -202,7 +206,6 @@ VkResult GPUCompressBCVk::Initialize(
 
     VkResult r = VK_SUCCESS;
     m_device = device;
-    m_is_llvmpipe = IsLLVMpipe(physical_device);
 
     vkGetPhysicalDeviceMemoryProperties(physical_device, &m_memory_props);
     vkGetDeviceQueue(m_device, family_id, 0, &m_queue);
@@ -220,13 +223,27 @@ VkResult GPUCompressBCVk::Initialize(
     if (r != VK_SUCCESS)
         return r;
 
-    r = CreateVkShaderModule(m_device, &m_shader_bc6_modeG10, BC6HEncode_TryModeG10CS, sizeof(BC6HEncode_TryModeG10CS));
-    if (r != VK_SUCCESS)
-        return r;
+#ifndef _WIN32
+    if (IsLLVMpipe(physical_device)) {
+        // Note: LLVMpipe requires a custom build which does not use f16tof32(), or it crashes on LLVM.
+        r = CreateVkShaderModule(m_device, &m_shader_bc6_modeG10, BC6HEncode_TryModeG10CS_llvmpipe, sizeof(BC6HEncode_TryModeG10CS_llvmpipe));
+        if (r != VK_SUCCESS)
+            return r;
 
-    r = CreateVkShaderModule(m_device, &m_shader_bc6_modeLE10, BC6HEncode_TryModeLE10CS, sizeof(BC6HEncode_TryModeLE10CS));
-    if (r != VK_SUCCESS)
-        return r;
+        r = CreateVkShaderModule(m_device, &m_shader_bc6_modeLE10, BC6HEncode_TryModeLE10CS_llvmpipe, sizeof(BC6HEncode_TryModeLE10CS_llvmpipe));
+        if (r != VK_SUCCESS)
+            return r;
+    } else
+#endif  // _WIN32
+    {
+        r = CreateVkShaderModule(m_device, &m_shader_bc6_modeG10, BC6HEncode_TryModeG10CS, sizeof(BC6HEncode_TryModeG10CS));
+        if (r != VK_SUCCESS)
+            return r;
+
+        r = CreateVkShaderModule(m_device, &m_shader_bc6_modeLE10, BC6HEncode_TryModeLE10CS, sizeof(BC6HEncode_TryModeLE10CS));
+        if (r != VK_SUCCESS)
+            return r;
+    }
 
     r = CreateVkShaderModule(m_device, &m_shader_bc7_enc, BC7Encode_EncodeBlockCS, sizeof(BC7Encode_EncodeBlockCS));
     if (r != VK_SUCCESS)
@@ -904,11 +921,6 @@ VkResult GPUCompressBCVk::Compress(void* src_pixels, void* out_pixels) {
 
     if (!src_pixels || !out_pixels)
         return VK_ERROR_UNKNOWN;
-
-    if (m_is_llvmpipe && !m_isbc7) {
-        // BC6 encoder crashes on LLVMpipe.
-        return VK_ERROR_UNKNOWN;
-    }
 
     VkFormat src_format = SrcFormatToVkFormat(m_srcformat);
 

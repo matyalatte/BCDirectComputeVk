@@ -25,10 +25,12 @@ exit /b 0
 :CompileShader
 echo Generating %1_%2.inc...
 dxc -spirv -fvk-use-dx-layout ^
+    -no-warnings ^
     -HV 2018 -T cs_6_0 -fspv-target-env=%TARGET_VK_VER% ^
     -fvk-u-shift 2 0 -fvk-b-shift 3 0 ^
     -E %2 -Fh %1_%2.inc -Vn %1_%2 %1.hlsl
 dxc -spirv -fvk-use-dx-layout ^
+    -no-warnings ^
     -HV 2018 -T cs_6_0 -fspv-target-env=%TARGET_VK_VER% ^
     -fvk-u-shift 2 0 -fvk-b-shift 3 0 ^
     -E %2 -Fo %1_%2.spv %1.hlsl

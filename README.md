@@ -22,7 +22,7 @@ runtime stack intended for full Direct3D compatibility. In contrast, DirectXTex 
 - ✅Windows (NVIDIA GPU): working
 - ✅WSL (NVIDIA GPU): working
 - ✅Linux VM (NVIDIA GPU): working (on Google Colab instances)
-- ⚠️Linux VM (llvmpipe): BC6 encoder is disabled because LLVM crashes. (It might be an issue of llvmpipe but I'm not sure.)
+- ✅Linux VM (llvmpipe): working (on Github hosted servers)
 - ❓Physical Linux machines: not tested
 - ❓Arm64 machines: not tested
 - ❓macOS: not tested
