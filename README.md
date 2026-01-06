@@ -10,7 +10,7 @@ DirectXTex GPU compressor via the Vulkan API
 
 ## About
 
-BCDirectComputeVk is an experimental attempt to port [the BC6 and BC7 encoders from DirectXTex](https://github.com/microsoft/DirectXTex/tree/main/DirectXTex/Shaders) to Linux. It enables compiling HLSL shaders using [DirectXShaderCompiler](https://github.com/microsoft/DirectXShaderCompiler) and executing them through a custom C++ class. The goal is to integrate this encoder pipeline into my DDS-related projects.  
+BCDirectComputeVk is an experimental attempt to port [the BC6 and BC7 encoders from DirectXTex](https://github.com/microsoft/DirectXTex/tree/main/DirectXTex/Shaders) to Linux and macOS. It enables compiling HLSL shaders using [DirectXShaderCompiler](https://github.com/microsoft/DirectXShaderCompiler) and executing them through a custom C++ class. The goal is to integrate this encoder pipeline into my DDS-related projects.  
 
 ## Why not Use Wine?
 
@@ -23,9 +23,9 @@ runtime stack intended for full Direct3D compatibility. In contrast, DirectXTex 
 - ✅WSL (NVIDIA GPU): working
 - ✅Linux VM (NVIDIA GPU): working (on Google Colab instances)
 - ✅Linux VM (llvmpipe): working (on Github hosted servers)
-- ❓Physical Linux machines: not tested
-- ❓Arm64 machines: not tested
-- ❓macOS: not tested
+- ✅macOS VM (Apple Paravirtual device): working (on Github hosted servers)
+- ❓Physical Linux/macOS machines: not tested
+- ❓Arm64 Linux: not tested
 
 ## Build Instructions
 
@@ -47,8 +47,10 @@ sudo apt update
 sudo apt install build-essential cmake vulkan-sdk
 
 # You can also install vulkan from other packages and "./install_dxc.sh"
-# sudo apt install vulkan-tools libvulkan-dev vulkan-validationlayers
-# ./install_dxc.sh
+#   > sudo apt install vulkan-tools libvulkan-dev vulkan-validationlayers
+#   > ./install_dxc.sh
+# macOS users can run ./install_vulkan_mac.sh as admin to install the SDK
+#   > sudo ./install_vulkan_mac.sh
 ```
 
 Then, run `dxc_compile.sh` to compile HLSL files.

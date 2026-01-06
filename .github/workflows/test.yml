@@ -9,16 +9,28 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: test-${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest", "macos-latest"]
     steps:
       - uses: actions/checkout@v4
-      # Note: curl, tar, build-essential, and cmake are already installed
-      - run: |
+        with:
+          submodules: recursive
+
+      # Install Vulkan SDK
+      - if: runner.os=='Linux'
+        # Note: curl, tar, build-essential, and cmake are already installed
+        run: |
           sudo apt-get update
           sudo apt-get install mesa-vulkan-drivers vulkan-tools libvulkan-dev vulkan-validationlayers
-      - run: |
-          git submodule update --init
           ./install_dxc.sh
+      - if: runner.os=='macOS'
+        run: sudo ./install_vulkan_mac.sh
+
+      - run: vulkaninfo --summary
+      - run: |
           ./dxc_compile.sh
           ./build.sh
       - run: ./example-app

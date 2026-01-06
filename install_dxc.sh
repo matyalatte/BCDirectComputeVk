@@ -10,6 +10,10 @@ DXC_RELEASE_URL="https://github.com/microsoft/DirectXShaderCompiler/releases/dow
 DXC_ARCHIVE="linux_dxc_${DXC_RELEASE_DATE}.x86_64.tar.gz"
 INSTALL_PREFIX="$(realpath $(dirname "$0"))/dxc"
 
+if [[ "$(uname -s)" != "Linux" ]]; then
+    echo "install_dxc.sh is only available for Linux."
+    exit 1
+fi
 if [[ "$(uname -m)" != "x86_64" ]]; then
     echo "There is no dxc releases for your CPU architecture. Build dxc yourself."
     exit 1

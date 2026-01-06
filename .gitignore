@@ -18,6 +18,7 @@ dxc
 !build.sh
 !dxc_compile.sh
 !install_dxc.sh
+!install_vulkan_mac.sh
 
 # textures
 *.dds

@@ -63,21 +63,33 @@ static VkResult CreateVkInstance(VkInstance* instance, bool enable_debug = true)
     create_info.pApplicationInfo = &app_info;
 
     const char* validation_layers[1] = { "VK_LAYER_KHRONOS_validation" };
+#ifdef __APPLE__
+    // macOS requires more extensions.
+    // https://vulkan.lunarg.com/doc/sdk/1.4.335.1/mac/getting_started.html
+    const char* extension_names[3] = {
+        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+        VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+    };
+    uint32_t extension_count = 3;
+    create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#else
     const char* extension_names[1] = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
+    uint32_t extension_count = 1;
+#endif
 
     if (enable_debug) {
         create_info.pNext = &validation_features;
         create_info.enabledLayerCount = 1;
         create_info.ppEnabledLayerNames = validation_layers;
-        create_info.enabledExtensionCount = 1;
-        create_info.ppEnabledExtensionNames = extension_names;
     } else {
         create_info.pNext = nullptr;
         create_info.enabledLayerCount = 0;
         create_info.ppEnabledLayerNames = nullptr;
-        create_info.enabledExtensionCount = 0;
-        create_info.ppEnabledExtensionNames = nullptr;
+        extension_count--;  // remove VK_EXT_DEBUG_UTILS_EXTENSION_NAME
     }
+    create_info.enabledExtensionCount = extension_count;
+    create_info.ppEnabledExtensionNames = extension_names;
 
     *instance = VK_NULL_HANDLE;
     return vkCreateInstance(&create_info, nullptr, instance);
