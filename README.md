@@ -29,7 +29,7 @@ runtime stack intended for full Direct3D compatibility. In contrast, DirectXTex 
 
 ## Build Instructions
 
-First, download submoudles.
+First, download submodules.
 ```bash
 git submodule update --init
 ```
