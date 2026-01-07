@@ -30,24 +30,17 @@ compile_shader() {
 
     if [ "$3" = "use_llvmpipe" ]; then
         opt+=("-D" "USE_LLVMPIPE")
-        filename="${base}_${entry}_llvmpipe"
+        filename+="_llvmpipe"
     fi
 
     echo Generating ${filename}.inc...
-
-    dxc \
-        "${opt[@]}" \
-        -Fh "${filename}.inc" \
-        -Vn "${filename}" \
-        "${base}.hlsl"
-
-    dxc \
-        "${opt[@]}" \
-        -Fo "${filename}.spv" \
-        "${base}.hlsl"
+    dxc "${opt[@]}" -Fh "./compiled_shaders/${filename}.inc" -Vn "${filename}" "${base}.hlsl"
+    # dxc "${opt[@]}" -Fo "./compiled_shaders/${filename}.spv" "${base}.hlsl"
 }
 
 pushd $(dirname "$0")/src
+
+mkdir -p ./compiled_shaders
 
 compile_shader BC7Encode TryMode456CS
 compile_shader BC7Encode TryMode137CS

@@ -30,7 +30,5 @@ jobs:
         run: sudo ./install_vulkan_mac.sh
 
       - run: vulkaninfo --summary
-      - run: |
-          ./dxc_compile.sh
-          ./build.sh
+      - run: ./build.sh
       - run: ./example-app

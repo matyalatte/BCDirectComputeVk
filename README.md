@@ -34,7 +34,7 @@ First, download submoudles.
 git submodule update --init
 ```
 
-Next, install gcc, cmake, and vulkan-sdk.
+Then, install gcc, cmake, and vulkan-sdk.
 
 ```bash
 # Note: This only works for Ubuntu24.04.
@@ -51,12 +51,6 @@ sudo apt install build-essential cmake vulkan-sdk
 #   > ./install_dxc.sh
 # macOS users can run ./install_vulkan_mac.sh as admin to install the SDK
 #   > sudo ./install_vulkan_mac.sh
-```
-
-Then, run `dxc_compile.sh` to compile HLSL files.
-
-```bash
-./dxc_compile.sh
 ```
 
 Finally, build and run `example-app` using `build.sh`. It generates `BC6_result.dds` and `BC7_result.dds`.
